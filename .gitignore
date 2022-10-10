@@ -80,6 +80,7 @@ docs/_build/
 target/
 
 # Jupyter Notebook
+!jupyter/*.py
 jupyter/
 .ipynb_checkpoints
 
