@@ -298,3 +298,7 @@ class DistClient(DistNode):
                                       epoch_data.cpu_usage,
                                       epoch)
 
+            self.tb_writer.add_scala('experiment index',
+                                    self.learning_params.experiment_id,
+                                    epoch)    
+

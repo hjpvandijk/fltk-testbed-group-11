@@ -76,6 +76,7 @@ class LearnerConfig:
     scheduler_gamma: float = field(metadata=dict(required=False, missing=0.5))
     min_lr: float = field(metadata=dict(required=False, missing=1e-10))
     optimizer: Optimizations = field(metadata=dict(required=False, missing=Optimizations.sgd))
+    experiment_id: int = field(metadata=dict(required=False, missing=-1))
 
 
 @dataclass_json

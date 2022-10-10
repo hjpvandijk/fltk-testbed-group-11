@@ -36,7 +36,7 @@ experiment_indices, _ = list(
                     split_binary_strings))))))
 
 cores = ["500m", "2000m"]
-memories = ["1Gi", "8Gi"]
+memories = ["1Gi", "2Gi"]
 train_batches = [32, 128]
 test_batches = [32, 128]
 parallel_list = [2, 5]
@@ -53,13 +53,16 @@ parameters = [
 # list or the first entry of each list depending on whether the index is 0 or 1.
 
 experiments = []
+counter = 0
 
 for on_off_values in map(
         lambda xs: map(lambda x: 0 if x == "0" else 1, xs[1]),
         filter(lambda x: x[0] in experiment_indices,
                enumerate(split_binary_strings))):
     experiments.append(
-        list(map(lambda x: x[1][x[0]], zip(on_off_values, parameters))))
+        list(map(lambda x: x[1][x[0]], zip(on_off_values, parameters))) + [counter])
+
+    counter += 1
 
 with open('example_arrival_config.json.jinja2') as f:
     template = jinja2.Template(f.read())
