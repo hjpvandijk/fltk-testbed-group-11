@@ -1,6 +1,8 @@
 import jinja2
 from functools import reduce
 
+
+SEED = 23
 NUMBER_OF_PARAMETERS = 6
 
 
@@ -66,4 +68,4 @@ with open('example_arrival_config.json.jinja2') as f:
     template = jinja2.Template(f.read())
 
     with open('example_arrival_config.json', 'w') as f2:
-        f2.write(template.render(experiments=experiments))
+        f2.write(template.render(experiments=experiments, seed=SEED))

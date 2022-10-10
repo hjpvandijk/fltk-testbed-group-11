@@ -52,15 +52,15 @@
           }
         },
         "learningParameters": {
-          "totalEpochs": 100,
-          "rounds": 100,
+          "totalEpochs": 10,
+          "rounds": 10,
           "epochsPerRound": 1,
           "cuda": false,
           "clientsPerRound": {{ experiment[4] }},
           "dataSampler": {
             "type": "uniform",
             "qValue": 0.07,
-            "seed": {{ 0 }},
+            "seed": {{ seed }},
             "shuffle": true
           },
           "aggregation": "FedAvg"
