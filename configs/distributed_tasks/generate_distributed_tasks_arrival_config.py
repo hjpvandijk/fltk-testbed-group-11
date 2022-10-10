@@ -37,9 +37,9 @@ experiment_indices, _ = list(
 
 cores = ["500m", "2000m"]
 memories = ["1Gi", "8Gi"]
-train_batches = [32, 256]
-test_batches = [32, 256]
-parallel_list = [2, 11]
+train_batches = [32, 128]
+test_batches = [32, 128]
+parallel_list = [2, 5]
 networks = [
     f'{{ "seed": {SEED}, "network": "Cifar10CNN", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }}',
     f'{{ "seed": {SEED}, "network": "Cifar10ResNet", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }}'
