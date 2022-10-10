@@ -83,7 +83,7 @@ class ExecutionConfig:
 class OrchestratorConfig:
     """ """
     orchestrator_type: OrchestratorType
-    parallel_execution: bool = True
+    parallel_execution: bool = False
 
 
 @dataclass_json
