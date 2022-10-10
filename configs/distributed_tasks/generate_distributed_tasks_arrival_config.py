@@ -36,7 +36,7 @@ experiment_indices, _ = list(
                     split_binary_strings))))))
 
 cores = ["500m", "2000m"]
-memories = ["1Gi", "8Gi"]
+memories = ["1Gi", "2Gi"]
 train_batches = [32, 128]
 test_batches = [32, 128]
 parallel_list = [2, 5]

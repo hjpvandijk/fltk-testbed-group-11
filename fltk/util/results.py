@@ -14,9 +14,9 @@ class EpochData:
     loss_train: float
     accuracy: float
     loss: float
-    cpu_usage: np.array
-    # class_precision: np.array
-    # class_recall: np.array
+    cpu_usage: float
+    class_precision: np.array
+    class_recall: np.array
     confusion_mat: np.array
 
 
