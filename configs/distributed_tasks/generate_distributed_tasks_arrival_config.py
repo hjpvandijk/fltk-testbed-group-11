@@ -39,10 +39,10 @@ cores = ["500m", "2000m"]
 memories = ["1Gi", "8Gi"]
 train_batches = [32, 256]
 test_batches = [32, 256]
-parallel_list = [2, 50]
+parallel_list = [2, 11]
 networks = [
     f'{{ "seed": {SEED}, "network": "Cifar10CNN", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }}',
-    f'{{ "seed": {SEED}, "network": "ResNet34", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }}'
+    f'{{ "seed": {SEED}, "network": "Cifar10ResNet", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }}'
 ]
 
 parameters = [
