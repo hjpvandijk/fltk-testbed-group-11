@@ -83,6 +83,10 @@ target/
 jupyter/*
 .ipynb_checkpoints
 
+# Logging
+jupyter/logging
+jupyter/csvs
+
 #cluster config
 configs/example_cloud_experiment.json
 
