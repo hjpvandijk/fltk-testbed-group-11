@@ -1,8 +1,6 @@
 import jinja2
 from functools import reduce
 
-
-SEED = 23
 NUMBER_OF_PARAMETERS = 6
 
 
@@ -44,7 +42,7 @@ test_batches = [32, 256]
 parallel_list = [2, 50]
 networks = [
     '{ "network": "Cifar10CNN", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }',
-    '{ "network": "Cifar10ResNet", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }'
+    '{ "network": "ResNet34", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }'
 ]
 seeds = [42, 360, 20]
 
@@ -67,6 +65,5 @@ for on_off_values in map(
 with open('example_arrival_config.json.jinja2') as f:
     template = jinja2.Template(f.read())
 
-    print(len(experiments))
     with open('example_arrival_config.json', 'w') as f2:
-        f2.write(template.render(experiments=experiments, seed=SEED))
+        f2.write(template.render(experiments=experiments))

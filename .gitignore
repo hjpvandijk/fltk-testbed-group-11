@@ -80,8 +80,7 @@ docs/_build/
 target/
 
 # Jupyter Notebook
-!jupyter/*.py
-jupyter/
+jupyter/*
 .ipynb_checkpoints
 
 #cluster config
