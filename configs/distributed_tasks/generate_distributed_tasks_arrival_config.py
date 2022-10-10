@@ -2,7 +2,7 @@ import jinja2
 from functools import reduce
 
 NUMBER_OF_PARAMETERS = 6
-
+SEED = 23
 
 def generate_binary_strings(bit_count):
     """Taken from:
@@ -37,14 +37,13 @@ experiment_indices, _ = list(
 
 cores = ["500m", "2000m"]
 memories = ["1Gi", "8Gi"]
-train_batches = [32, 256]
-test_batches = [32, 256]
-parallel_list = [2, 50]
+train_batches = [32, 128]
+test_batches = [32, 128]
+parallel_list = [2, 5]
 networks = [
-    '{ "network": "Cifar10CNN", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }',
-    '{ "network": "ResNet34", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }'
+    f'{{ "seed": {SEED}, "network": "Cifar10CNN", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }}',
+    f'{{ "seed": {SEED}, "network": "Cifar10ResNet", "lossFunction": "CrossEntropyLoss", "dataset": "cifar10" }}'
 ]
-seeds = [42, 360, 20]
 
 parameters = [
     cores, memories, train_batches, test_batches, parallel_list, networks
