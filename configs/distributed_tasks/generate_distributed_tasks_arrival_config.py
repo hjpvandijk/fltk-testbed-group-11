@@ -2,7 +2,7 @@ import jinja2
 from functools import reduce
 
 NUMBER_OF_PARAMETERS = 6
-
+SEED = 23
 
 def generate_binary_strings(bit_count):
     """Taken from:
