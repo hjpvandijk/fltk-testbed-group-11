@@ -26,8 +26,8 @@
             "dataParallelism": 2,
             "configurations": {
               "default": {
-                "cores": "500m",
-                "memory": "1Gi"
+                "cores": "2000m",
+                "memory": "4Gi"
               }
             }
           },

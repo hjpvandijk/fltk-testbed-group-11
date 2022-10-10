@@ -1,22 +1,22 @@
 {
    "cluster": {
       "orchestrator": {
-         "orchestrator_type": "simulated"
+         "orchestrator_type": "batch"
       },
       "client": {
          "prefix": "client",
          "tensorboard_active": false
       },
-      "image": "gcr.io/test-bed-fltk/fltk:latest",
+      "image": "gcr.io/fltk-group-11/fltk:latest",
       "namespace": "test"
    },
    "execution_config": {
-      "duration": 60,
+      "duration": 200,
       "experiment_prefix": "cloud_experiment",
       "cuda": false,
       "tensorboard": {
          "active": true,
-         "record_dir": "logging"
+         "record_dir": "logging_batch"
       },
       "net": {
          "save_model": false,
@@ -28,7 +28,7 @@
       },
       "reproducibility": {
          "seeds": [42],
-         "parallel_execution": true
+         "parallel_execution": false
       }
    }
 }

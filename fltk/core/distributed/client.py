@@ -221,6 +221,7 @@ class DistClient(DistNode):
             train_loss = self.train(epoch)
             cpu_percentages = psutil.cpu_percent(percpu=True)
             self._logger.info(cpu_percentages)
+            self._logger.info(self.learning_params)
             cpu_usage = cpu_percentages[0]
             
 
@@ -251,7 +252,7 @@ class DistClient(DistNode):
                              num_epochs=max_epoch)
 
             epoch_results.append(data)
-            if self._id == 0:
+            if self._id == 0:                
                 self.log_progress(data, epoch)
         return epoch_results
 
