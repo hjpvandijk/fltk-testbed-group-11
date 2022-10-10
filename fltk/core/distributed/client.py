@@ -143,6 +143,9 @@ class DistClient(DistNode):
                 self._logger.info(f'[{epoch:d}, {i:5d}] loss: {running_loss / log_interval:.3f}')
                 final_running_loss = running_loss / log_interval
                 running_loss = 0.0
+                self._logger.info(psutil.cpu_count())
+                self._logger.info(psutil.virtual_memory())
+                self._logger.info(psutil.swap_memory())
         self.scheduler.step()
 
         # Save model
@@ -216,7 +219,11 @@ class DistClient(DistNode):
 
             psutil.cpu_percent()
             train_loss = self.train(epoch)
-            cpu_usage = psutil.cpu_percent()
+            cpu_percentages = psutil.cpu_percent(percpu=True)
+            self._logger.info(cpu_percentages)
+            cpu_usage = cpu_percentages[0]
+            
+
 
 
             # Let only the 'master node' work on training. Possibly DDP can be used
@@ -287,6 +294,7 @@ class DistClient(DistNode):
                                       epoch_data.duration_test,
                                       epoch)
 
-            self.tb_writer.add_scalar('cpu usage per epoch',
+            self.tb_writer.add_scalar('cpu 1 usage per epoch',
                                       epoch_data.cpu_usage,
                                       epoch)
+
