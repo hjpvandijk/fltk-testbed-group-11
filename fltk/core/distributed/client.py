@@ -304,9 +304,12 @@ class DistClient(DistNode):
                                         epoch_data.duration_test,
                                         epoch)
 
-
             # for i, entry in enumerate(epoch_data.cpu_usage):
             #     self.tb_writer.add_scalar('cpu ' + str(i) + ' usage per epoch',
             #                             entry,
             #                             epoch)
+
+            # self.tb_writer.add_scala('experiment index',
+            #                         self.learning_params.experiment_id,
+            #                         epoch)    
 
