@@ -53,14 +53,14 @@ parameters = [
 # list or the first entry of each list depending on whether the index is 0 or 1.
 
 experiments = []
-counter = 0
+counter = 0 # Not used for now
 
 for on_off_values in map(
         lambda xs: map(lambda x: 0 if x == "0" else 1, xs[1]),
         filter(lambda x: x[0] in experiment_indices,
                enumerate(split_binary_strings))):
     experiments.append(
-        list(map(lambda x: x[1][x[0]], zip(on_off_values, parameters))) + [counter])
+        list(map(lambda x: x[1][x[0]], zip(on_off_values, parameters))))
 
     counter += 1
 
