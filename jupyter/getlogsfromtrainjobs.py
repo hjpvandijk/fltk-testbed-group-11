@@ -18,7 +18,7 @@ for i in splitted:
         
         retlogs = os.popen("kubectl logs -n test " + i).read()
         epochdata = retlogs[retlogs.find("[EpochData"):]
-        f = open("epochdata/" + i + "_epochdata.txt", "a")
+        f = open("epochdata/" + i + "_epochdata.txt", "w")
         f.write(epochdata)
         f.close()
 
