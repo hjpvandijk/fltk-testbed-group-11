@@ -3,9 +3,9 @@ import pickle
 import pandas as pd
 
 from tflogs2pandas import main
+experiment_dict = {}
 
-for root, dirs, files in os.walk("./logging/0"):
-    experiment_dict = {}
+for root, dirs, files in os.walk("./logging_batch/0"):
 
     for file in files:
         if file.startswith("events.out.tfevents"):
@@ -15,5 +15,5 @@ for root, dirs, files in os.walk("./logging/0"):
 
             experiment_dict[file] = df.pivot_table(index=['step'], columns=['metric'], values='value')
 
-    with open('all_experiments.pickle', 'wb') as handle:
-        pickle.dump(experiment_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+with open('all_experiments.pickle', 'wb') as handle:
+    pickle.dump(experiment_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
