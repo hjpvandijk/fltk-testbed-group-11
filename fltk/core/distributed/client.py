@@ -301,7 +301,7 @@ class DistClient(DistNode):
                                       epoch)
 
             self.tb_writer.add_scalar('average cpu usage per epoch',
-                                        epoch_data.duration_test,
+                                        epoch_data.cpu_usage,
                                         epoch)
 
             # for i, entry in enumerate(epoch_data.cpu_usage):
