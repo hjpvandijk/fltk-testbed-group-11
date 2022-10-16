@@ -91,22 +91,22 @@ def main(logdir_or_logfile: str, write_pkl: bool, write_csv: bool, out_dir: str)
         )
     # Call & append
     if event_paths:
-        pp.pprint("Found tensorflow logs to process:")
-        pp.pprint(event_paths)
+        # pp.pprint("Found tensorflow logs to process:")
+        # pp.pprint(event_paths)
         all_logs = many_logs2pandas(event_paths)
-        pp.pprint("Head of created dataframe")
-        pp.pprint(all_logs.head())
+        # pp.pprint("Head of created dataframe")
+        # pp.pprint(all_logs.head())
 
         os.makedirs(out_dir, exist_ok=True)
         if write_csv:
-            print("saving to csv file")
+            # print("saving to csv file")
             out_file = os.path.join(out_dir, "all_training_logs_in_one_file.csv")
-            print(out_file)
+            # print(out_file)
             all_logs.to_csv(out_file, index=None)
         if write_pkl:
-            print("saving to pickle file")
+            # print("saving to pickle file")
             out_file = os.path.join(out_dir, "all_training_logs_in_one_file.pkl")
-            print(out_file)
+            # print(out_file)
             all_logs.to_pickle(out_file)
     else:
         print("No event paths have been found.")
