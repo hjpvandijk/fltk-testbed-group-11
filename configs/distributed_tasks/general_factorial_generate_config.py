@@ -23,5 +23,5 @@ experiments = list(product(*parameters))
 with open('example_arrival_config.json.jinja2') as f:
     template = jinja2.Template(f.read())
 
-    with open('example_arrival_config_2.json', 'w') as f2:
+    with open('example_arrival_config.json', 'w') as f2:
         f2.write(template.render(experiments=experiments))
