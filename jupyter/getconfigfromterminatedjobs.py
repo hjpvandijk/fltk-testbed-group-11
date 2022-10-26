@@ -13,6 +13,11 @@ isExist = os.path.exists("epochdata")
 if not isExist:
     os.mkdir("epochdata")
 
+isExist = os.path.exists("configperjob")
+if not isExist:
+    os.mkdir("configperjob")
+
+
 isExist = os.path.exists("describepodsterminated")
 if not isExist:
     os.mkdir("describepodsterminated")
