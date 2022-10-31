@@ -1,8 +1,9 @@
 import joblib
 from numpy import average, var
 import pandas as pd
-from math import factorial
-from scipy.optimize import differential_evolution
+from math import factorial, ceil
+import numpy as np
+import matplotlib.pyplot as plt
 
 # configs = {
 #     'exp1': {
@@ -35,9 +36,20 @@ def scale_data(X_to_predict_cnn, X_to_predict_resnet, X_to_predict_with_model):
     scaler_combined = joblib.load('scaler_combined.joblib')
 
     # ... and scale the features
-    X_to_predict_cnn_scaled = scaler_cnn.transform(X_to_predict_cnn)
-    X_to_predict_resnet_scaled = scaler_resnet.transform(X_to_predict_resnet)
-    X_to_predict_with_model_scaled = scaler_combined.transform(X_to_predict_with_model)
+    if len(X_to_predict_cnn) < 1:
+        X_to_predict_cnn_scaled = X_to_predict_cnn
+    else:
+        X_to_predict_cnn_scaled = scaler_cnn.transform(X_to_predict_cnn)
+
+    if len(X_to_predict_resnet) < 1:
+        X_to_predict_resnet_scaled = X_to_predict_resnet
+    else :
+        X_to_predict_resnet_scaled = scaler_resnet.transform(X_to_predict_resnet)
+
+    if len(X_to_predict_with_model) < 1:
+        X_to_predict_with_model_scaled = X_to_predict_with_model
+    else:    
+        X_to_predict_with_model_scaled = scaler_combined.transform(X_to_predict_with_model)
     return X_to_predict_cnn_scaled, X_to_predict_resnet_scaled, X_to_predict_with_model_scaled
 
 def import_regression_models():
@@ -58,23 +70,24 @@ def calculate_mu(service_times):
     mu_val = 1/(sum(service_times)/len(service_times))
     return mu_val
 
-def calculate_energy_usage_per_experiment(X_cnn, X_resnet, X_cnn_unscaled, X_resnet_unscaled, rf_cnn_cpu, rf_resnet_cpu):
+def calculate_power_usage_per_experiment(X_cnn, X_resnet, X_cnn_unscaled, X_resnet_unscaled, rf_cnn_cpu, rf_resnet_cpu):
 
     # Skylake, Broadwell, Haswell, AMD EPYC Rome, and AMD EPYC Milan
     # 6700: 65/4, 5775c: 65/8, 4770:  84/4, EPYC 7352: 155/24, EPYC 7443: 200/24
     tdp_per_core = sum([65/4, 65/8, 84/4, 155/24, 200/24]) / 5
 
-    energy_usages = []
+    power_usages = []
     for (X, X_unscaled, rf) in [(X_cnn, X_cnn_unscaled, rf_cnn_cpu), (X_resnet, X_resnet_unscaled, rf_resnet_cpu)]:
-        for i, exp in enumerate(X):
-            unscaled_exp = X_unscaled.iloc[i]
-            cores = unscaled_exp['CPU']
-            parallel = unscaled_exp["Paralell"]
-            total_cores = cores*parallel
-            cpu_util = rf.predict([exp])[0]
-            energy_usage = tdp_per_core * cpu_util * total_cores
-            energy_usages.append(energy_usage)
-    return energy_usages
+        if len(X_unscaled) != 0:
+            for i, exp in enumerate(X):
+                unscaled_exp = X_unscaled.iloc[i]
+                cores = unscaled_exp['CPU']
+                parallel = unscaled_exp["Paralell"]
+                total_cores = cores*parallel
+                cpu_util = rf.predict([exp])[0]
+                power_usage = tdp_per_core * cpu_util * total_cores
+                power_usages.append(power_usage)
+    return power_usages
 
 
 
@@ -113,35 +126,36 @@ def calculate_ERP_for_k_servers(k_servers):
     rf_combined_servicetime, rf_cnn_cpu, rf_resnet_cpu = import_regression_models()
     service_times = predict_service_times(X_combined, rf_combined_servicetime)
     mu_value = calculate_mu(service_times)
+    print(mu_value)
     if  not(lambda_value < mu_value): # Stability condition
         print("Lambda is not smaller than mu. The system is not stable")
         exit()
     avg_response_time = EWmgk(service_times, k_servers, lambda_value, mu_value) + 1/mu_value
-    energy_usages = calculate_energy_usage_per_experiment(X_cnn, X_resnet, X_cnn_unscaled, X_resnet_unscaled, rf_cnn_cpu, rf_resnet_cpu)
-    avg_energy_usage = average(energy_usages)
-    ERP = avg_energy_usage * avg_response_time
-    return ERP
+    power_usages = calculate_power_usage_per_experiment(X_cnn, X_resnet, X_cnn_unscaled, X_resnet_unscaled, rf_cnn_cpu, rf_resnet_cpu)
+    avg_power_usage = average(power_usages)
+    avg_energy_usage = avg_power_usage * ((1/mu_value)/36000000) #Wh
+    ERP = avg_energy_usage * avg_response_time*len(X_combined_unscaled) # Wh*ms
+    ERPhours = ERP/1000/3600000 # kWh*h
+    return ERPhours
 
-lambda_value = 1/(0.5*3600000) # Set
+def penalty(k_servers):
+    ERPhours = calculate_ERP_for_k_servers(k_servers)
+    return ERPhours + (ERPhours*10**-1)*k_servers
 
 
-bounds = [(1,100)]
-result = differential_evolution(calculate_ERP_for_k_servers, bounds)
-solution = result['x']
-minERP = calculate_ERP_for_k_servers(solution)
-print("Optimal n servers:", int(solution))
-print("Watts * ms:", minERP)
-print("KiloWatts * h:", minERP/1000/3600000)
+lambda_value = 1/(0.2*3600000) # Set this to the average lambda over all your experiments
 
-# import numpy as np
-# import matplotlib.pyplot as plt
-# x = np.arange(1, 100)
-# y = [calculate_ERP_for_k_servers(x)/3600000 for x in x]
 
-# solution = y.index(min(y))
-# print(solution)
-# print(calculate_ERP_for_k_servers(solution))
-# # print(calculate_ERP_for_k_servers(18))
+x = np.arange(1, 100)
+y = [calculate_ERP_for_k_servers(x) for x in x]
+ceiling = max(y)/1000
+y_rounded = [ceil(num/ceiling)*ceiling for num in y]
+solution = x[y_rounded.index(min(y_rounded))]
+minERP = min(y_rounded)
 
-# # plt.plot(x, y)
-# plt.show()
+plt.plot(x, y)
+plt.plot(int(solution), minERP, marker = 'o', color = 'r')
+plt.xlabel("Number of servers")
+plt.ylabel("ERP (kWh•h)")
+plt.savefig("ERP_optimal.pdf")
+plt.show()
