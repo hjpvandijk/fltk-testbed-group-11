@@ -128,8 +128,8 @@ def calculate_ERP_for_k_servers(k_servers, lambda_value, sample):
     rf_combined_servicetime, rf_cnn_cpu, rf_resnet_cpu = import_regression_models()
     service_times = predict_service_times(X_combined, rf_combined_servicetime)
     mu_value = calculate_mu(service_times)
-    print(mu_value, "=", str((1/mu_value)/60000))
-    if  not(lambda_value < mu_value): # Stability condition
+    # print(mu_value, "=", str((1/mu_value)/60000))
+    if  not(lambda_value < k_servers * mu_value): # Stability condition
         print("Lambda is not smaller than mu. The system is not stable")
         exit()
     avg_response_time = EWmgk(service_times, k_servers, lambda_value, mu_value) + 1/mu_value
@@ -138,29 +138,34 @@ def calculate_ERP_for_k_servers(k_servers, lambda_value, sample):
     avg_energy_usage = avg_power_usage * ((1/mu_value)/36000000) #Wh
     ERP = avg_energy_usage * avg_response_time*len(X_combined_unscaled) # Wh*ms
     ERPhours = ERP/1000/3600000 # kWh*h
-    return ERPhours
+    return ERPhours, mu_value
 
 def penalty(k_servers):
     ERPhours = calculate_ERP_for_k_servers(k_servers)
     return ERPhours + (ERPhours*10**-1)*k_servers
 
-
-for lambda_value in [1/(0.2*3600000), 1/(0.5*3600000), 1/3600000, 1/(1.5*3600000)]: # Set this to the average lambda over all your experiments
-    x = np.arange(1, 50)
-    sample = random.randint(4,10)
-    y = [calculate_ERP_for_k_servers(x, lambda_value, sample) for x in x]
+colors = ['red', 'green', 'blue', 'orange']
+solutions = []
+sample = random.randint(3,6)
+for i, lambda_value in enumerate([1/(0.2*3600000), 1/(0.5*3600000), 1/3600000, 1/(1.5*3600000)]): # Set this to the average lambda over all your experiments
+    x = np.arange(1, 30)
+    y_mu = [calculate_ERP_for_k_servers(x, lambda_value, sample) for x in x]
+    y = [tup[0] for tup in y_mu]
+    mu = 1/(y_mu[0][1])/60000
     ceiling = max(y)/1000
     y_rounded = [ceil(num/ceiling)*ceiling for num in y]
     solution = x[y_rounded.index(min(y_rounded))]
+    solutions.append(solution)
     minERP = min(y_rounded)
-    print("lamba:", lambda_value)
-    label = "λ = " + str(round((1/lambda_value)/60000, 0)) + "min$^{-1}$, μ = something" 
-    plt.plot(x, y, label=label)
-    plt.plot(int(solution), minERP, marker = 'o')
+    label = "λ = " + str(round((1/lambda_value)/60000, 0)) + "min$^{-1}$" 
+    plt.plot(x, y, label=label, color=colors[i])
+    plt.plot(int(solution), minERP, marker = 'o', color=colors[i])
+    # plt.ylim(0, minERP*3)
 plt.xlabel("Number of servers")
 plt.ylabel("ERP (kWh•h)")
+plt.xlim(0, min(max(solutions)*2, plt.xlim()[1]))
 # plt.yscale('log')
 # plt.xscale('  log')
 plt.legend()
-plt.savefig("ERP_optimal.pdf")
-plt.show()
+plt.savefig("ERP_optimal_" + str(round(mu, 2)) + "_" + str(sample) + ".pdf")
+# plt.show()
