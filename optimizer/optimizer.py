@@ -127,7 +127,7 @@ def calculate_ERP_for_k_servers(k_servers, lambda_value):
     rf_combined_servicetime, rf_cnn_cpu, rf_resnet_cpu = import_regression_models()
     service_times = predict_service_times(X_combined, rf_combined_servicetime)
     mu_value = calculate_mu(service_times)
-    if  not(lambda_value < k_servers * mu_value): # Stability condition
+    if  not(lambda_value <= k_servers * mu_value): # Stability condition
         print("Lambda is not smaller than n_servers * mu. The system is not stable")
         exit()
     avg_response_time = EWmgk(service_times, k_servers, lambda_value, mu_value) + 1/mu_value
