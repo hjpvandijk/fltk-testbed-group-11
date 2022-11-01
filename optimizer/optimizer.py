@@ -1,7 +1,7 @@
 import joblib
 from numpy import average, var
 import pandas as pd
-from math import factorial, ceil
+from math import factorial, ceil, sqrt
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -12,10 +12,9 @@ import random
 #         'parallel' : 5,
 #         'network': 'Cifar10CNN'}}
 
-def import_data(sample):
+def import_data():
 
     configs_df = pd.read_csv('experiment_configs.csv')
-    configs_df = configs_df.sample(n = sample, random_state=sample)
 
     maskCNN = configs_df.model == 'Cifar10CNN'
     maskResNet = configs_df.model == 'Cifar10ResNet'
@@ -121,16 +120,15 @@ def EWmgk(service_times, k_servers, lamda_value, mu_value):
     pt2 = Etq(k_servers, lamda_value, mu_value)
     return pt1*pt2
 
-def calculate_ERP_for_k_servers(k_servers, lambda_value, sample):
+def calculate_ERP_for_k_servers(k_servers, lambda_value):
     k_servers = int(k_servers)
-    X_cnn_unscaled, X_resnet_unscaled, X_combined_unscaled = import_data(sample)
+    X_cnn_unscaled, X_resnet_unscaled, X_combined_unscaled = import_data()
     X_cnn, X_resnet, X_combined = scale_data(X_cnn_unscaled, X_resnet_unscaled, X_combined_unscaled)
     rf_combined_servicetime, rf_cnn_cpu, rf_resnet_cpu = import_regression_models()
     service_times = predict_service_times(X_combined, rf_combined_servicetime)
     mu_value = calculate_mu(service_times)
-    print(mu_value, "=", str((1/mu_value)/60000))
-    if  not(lambda_value < mu_value): # Stability condition
-        print("Lambda is not smaller than mu. The system is not stable")
+    if  not(lambda_value < k_servers * mu_value): # Stability condition
+        print("Lambda is not smaller than n_servers * mu. The system is not stable")
         exit()
     avg_response_time = EWmgk(service_times, k_servers, lambda_value, mu_value) + 1/mu_value
     power_usages = calculate_power_usage_per_experiment(X_cnn, X_resnet, X_cnn_unscaled, X_resnet_unscaled, rf_cnn_cpu, rf_resnet_cpu)
@@ -138,29 +136,63 @@ def calculate_ERP_for_k_servers(k_servers, lambda_value, sample):
     avg_energy_usage = avg_power_usage * ((1/mu_value)/36000000) #Wh
     ERP = avg_energy_usage * avg_response_time*len(X_combined_unscaled) # Wh*ms
     ERPhours = ERP/1000/3600000 # kWh*h
-    return ERPhours
+    return ERPhours, mu_value
 
 def penalty(k_servers):
     ERPhours = calculate_ERP_for_k_servers(k_servers)
     return ERPhours + (ERPhours*10**-1)*k_servers
 
 
-for lambda_value in [1/(0.2*3600000), 1/(0.5*3600000), 1/3600000, 1/(1.5*3600000)]: # Set this to the average lambda over all your experiments
-    x = np.arange(1, 50)
-    sample = random.randint(4,10)
-    y = [calculate_ERP_for_k_servers(x, lambda_value, sample) for x in x]
+# lambda_value = 1/(0.1*36000000) # In ms^-1. Change according to the average lambda of your experiments
+
+def optimize(lambda_value):
+    x = np.arange(1, 15)
+    y_mu = [calculate_ERP_for_k_servers(x, lambda_value) for x in x]
+    y = [tup[0] for tup in y_mu]
+    mu = y_mu[1][1]
     ceiling = max(y)/1000
     y_rounded = [ceil(num/ceiling)*ceiling for num in y]
     solution = x[y_rounded.index(min(y_rounded))]
     minERP = min(y_rounded)
-    print("lamba:", lambda_value)
-    label = "λ = " + str(round((1/lambda_value)/60000, 0)) + "min$^{-1}$, μ = something" 
-    plt.plot(x, y, label=label)
-    plt.plot(int(solution), minERP, marker = 'o')
-plt.xlabel("Number of servers")
-plt.ylabel("ERP (kWh•h)")
-# plt.yscale('log')
-# plt.xscale('  log')
+    return solution, minERP, mu
+
+# solution, minERP, mu = optimize(lambda_value)
+# print("lambda =", lambda_value)
+# print("Optimal number of servers:", solut     ion)
+# print("With ERP (kWh*h):", minERP)
+
+# print("ERP theirs", calculate_ERP_for_k_servers(1, lambda_value)[0])
+
+lambdas = np.arange(0.05, 2, 0.05)
+# print(1/(0.1*3600000))
+# print(1/(2*3600000))
+# print(1/(0.05*3600000))
+# lambdas = np.arange(0, 0.5, 0.1)
+X_solution = []
+erps_solution = []
+X_rot = []
+erps_rot = []
+rhos = []
+
+for i in lambdas:
+    lambda_value = 1/(i*3600000)
+    solution, minERP, mu = optimize(lambda_value)
+    rho = lambda_value/mu
+    print((1/mu)/60000)
+    rhos.append(rho)
+    rot = int(max(1, rho + sqrt(rho)))
+    erp_rot, _ = calculate_ERP_for_k_servers(rot, lambda_value)
+    print("solution:", solution, "with min ERP=", minERP)
+    print("rot:", rot, "with ERP=", erp_rot)
+    X_solution.append(solution)
+    erps_solution.append(minERP)
+    X_rot.append(rot)
+    erps_rot.append(erp_rot)
+
+plt.plot(rhos, erps_solution, label="Optimizer")
+plt.plot(rhos, erps_rot, label="Hall(1991) Rule of Thumb")
+plt.xlabel("ρ")
+plt.ylabel("ERP (kWh•h")
 plt.legend()
-plt.savefig("ERP_optimal.pdf")
+plt.savefig("optimizer_vs_ruleofthumb.pdf")
 plt.show()
