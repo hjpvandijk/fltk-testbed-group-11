@@ -12,9 +12,10 @@ import random
 #         'parallel' : 5,
 #         'network': 'Cifar10CNN'}}
 
-def import_data():
+def import_data(sample):
 
     configs_df = pd.read_csv('experiment_configs.csv')
+    configs_df = configs_df.sample(n = sample, random_state=sample)
 
     maskCNN = configs_df.model == 'Cifar10CNN'
     maskResNet = configs_df.model == 'Cifar10ResNet'
@@ -120,13 +121,14 @@ def EWmgk(service_times, k_servers, lamda_value, mu_value):
     pt2 = Etq(k_servers, lamda_value, mu_value)
     return pt1*pt2
 
-def calculate_ERP_for_k_servers(k_servers, lambda_value):
+def calculate_ERP_for_k_servers(k_servers, lambda_value, sample):
     k_servers = int(k_servers)
-    X_cnn_unscaled, X_resnet_unscaled, X_combined_unscaled = import_data()
+    X_cnn_unscaled, X_resnet_unscaled, X_combined_unscaled = import_data(sample)
     X_cnn, X_resnet, X_combined = scale_data(X_cnn_unscaled, X_resnet_unscaled, X_combined_unscaled)
     rf_combined_servicetime, rf_cnn_cpu, rf_resnet_cpu = import_regression_models()
     service_times = predict_service_times(X_combined, rf_combined_servicetime)
     mu_value = calculate_mu(service_times)
+    print(mu_value, "=", str((1/mu_value)/60000))
     if  not(lambda_value < mu_value): # Stability condition
         print("Lambda is not smaller than mu. The system is not stable")
         exit()
@@ -142,14 +144,23 @@ def penalty(k_servers):
     ERPhours = calculate_ERP_for_k_servers(k_servers)
     return ERPhours + (ERPhours*10**-1)*k_servers
 
-lambda_value = 1/36000000 # In ms^-1. Change according to the average lambda of your experiments
 
-x = np.arange(1, 100)
-sample = random.randint(4,10)
-y = [calculate_ERP_for_k_servers(x, lambda_value) for x in x]
-ceiling = max(y)/1000
-y_rounded = [ceil(num/ceiling)*ceiling for num in y]
-solution = x[y_rounded.index(min(y_rounded))]
-minERP = min(y_rounded)
-print("Optimal number of servers:", solution)
-print("With ERP (kWh*h):", minERP)
+for lambda_value in [1/(0.2*3600000), 1/(0.5*3600000), 1/3600000, 1/(1.5*3600000)]: # Set this to the average lambda over all your experiments
+    x = np.arange(1, 50)
+    sample = random.randint(4,10)
+    y = [calculate_ERP_for_k_servers(x, lambda_value, sample) for x in x]
+    ceiling = max(y)/1000
+    y_rounded = [ceil(num/ceiling)*ceiling for num in y]
+    solution = x[y_rounded.index(min(y_rounded))]
+    minERP = min(y_rounded)
+    print("lamba:", lambda_value)
+    label = "λ = " + str(round((1/lambda_value)/60000, 0)) + "min$^{-1}$, μ = something" 
+    plt.plot(x, y, label=label)
+    plt.plot(int(solution), minERP, marker = 'o')
+plt.xlabel("Number of servers")
+plt.ylabel("ERP (kWh•h)")
+# plt.yscale('log')
+# plt.xscale('  log')
+plt.legend()
+plt.savefig("ERP_optimal.pdf")
+plt.show()
