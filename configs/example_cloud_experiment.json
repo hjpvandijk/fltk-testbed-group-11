@@ -1,7 +1,7 @@
 {
    "cluster": {
       "orchestrator": {
-         "orchestrator_type": "simulated"
+         "orchestrator_type": "batch"
       },
       "client": {
          "prefix": "client",
@@ -28,7 +28,7 @@
       },
       "reproducibility": {
          "seeds": [42],
-         "parallel_execution": true
+         "parallel_execution": false
       }
    }
 }

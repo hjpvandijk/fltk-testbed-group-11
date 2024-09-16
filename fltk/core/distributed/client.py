@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Tuple, TYPE_CHECKING
 
 import numpy as np
+import psutil
 import torch
 from sklearn.metrics import confusion_matrix
 from torch.utils.tensorboard import SummaryWriter
@@ -142,6 +143,8 @@ class DistClient(DistNode):
                 self._logger.info(f'[{epoch:d}, {i:5d}] loss: {running_loss / log_interval:.3f}')
                 final_running_loss = running_loss / log_interval
                 running_loss = 0.0
+
+                self._logger.info(self.learning_params)
         self.scheduler.step()
 
         # Save model
@@ -193,13 +196,15 @@ class DistClient(DistNode):
         class_precision: np.array = calculate_class_precision(confusion_mat)
         class_recall: np.array = calculate_class_recall(confusion_mat)
 
+    
+
         self._logger.debug(f'Test set: Accuracy: {correct}/{total} ({accuracy:.0f}%)')
         self._logger.debug(f'Test set: Loss: {loss}')
         self._logger.debug(f"Confusion Matrix:\n{confusion_mat}")
         self._logger.debug(f"Class precision: {class_precision}")
         self._logger.debug(f"Class recall: {class_recall}")
 
-        return accuracy, loss, class_precision, class_recall, confusion_mat
+        return accuracy, loss, confusion_mat, class_precision, class_recall
 
     def run_epochs(self) -> List[EpochData]:
         """
@@ -212,7 +217,16 @@ class DistClient(DistNode):
         start_time_train = datetime.datetime.now()
         epoch_results = []
         for epoch in range(1, max_epoch):
+
+            psutil.cpu_percent()
             train_loss = self.train(epoch)
+            # cpu_percentages = np.array(psutil.cpu_percent(percpu=True))
+            cpu_percent = psutil.cpu_percent()
+            # self._logger.info(cpu_percentages)
+            # self._logger.info(self.learning_params)
+            
+
+
 
             # Let only the 'master node' work on training. Possibly DDP can be used
             # to have a distributed test loader as well to speed up (would require
@@ -221,7 +235,8 @@ class DistClient(DistNode):
             train_time_ms = int(elapsed_time_train.total_seconds() * 1000)
 
             start_time_test = datetime.datetime.now()
-            accuracy, test_loss, class_precision, class_recall, confusion_mat = self.test()
+            accuracy, test_loss, confusion_mat, class_precision, class_recall  = self.test()
+            # accuracy, test_loss, confusion_mat = self.test()
 
             elapsed_time_test = datetime.datetime.now() - start_time_test
             test_time_ms = int(elapsed_time_test.total_seconds() * 1000)
@@ -232,12 +247,14 @@ class DistClient(DistNode):
                              loss_train=train_loss,
                              accuracy=accuracy,
                              loss=test_loss,
+                             cpu_usage=cpu_percent,
                              class_precision=class_precision,
                              class_recall=class_recall,
                              confusion_mat=confusion_mat,
                              num_epochs=max_epoch)
 
             epoch_results.append(data)
+            self._logger.info(self._id)
             if self._id == 0:
                 self.log_progress(data, epoch)
         return epoch_results
@@ -260,11 +277,39 @@ class DistClient(DistNode):
         @return: None
         @rtype: None
         """
+        self._logger.info("Making event file")
         if self.config.execution_config.tensorboard.active:
+            self._logger.info("Tensorboard active")
             self.tb_writer.add_scalar('training loss per epoch',
                                       epoch_data.loss_train,
                                       epoch)
+            
+            self.tb_writer.add_scalar('test loss per epoch',
+                                      epoch_data.loss,
+                                      epoch)
 
-            self.tb_writer.add_scalar('accuracy per epoch',
+            self.tb_writer.add_scalar('test accuracy per epoch',
                                       epoch_data.accuracy,
                                       epoch)
+                                      
+            self.tb_writer.add_scalar('train latency per epoch',
+                                      epoch_data.duration_train,
+                                      epoch)
+            
+            self.tb_writer.add_scalar('test latency per epoch',
+                                      epoch_data.duration_test,
+                                      epoch)
+
+            self.tb_writer.add_scalar('average cpu usage per epoch',
+                                        epoch_data.cpu_usage,
+                                        epoch)
+
+            # for i, entry in enumerate(epoch_data.cpu_usage):
+            #     self.tb_writer.add_scalar('cpu ' + str(i) + ' usage per epoch',
+            #                             entry,
+            #                             epoch)
+
+            # self.tb_writer.add_scala('experiment index',
+            #                         self.learning_params.experiment_id,
+            #                         epoch)    
+
